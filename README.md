@@ -1,0 +1,2 @@
+# transformers_model_self_implementation
+Transformers deep learning architecture self implementation in pytorch
