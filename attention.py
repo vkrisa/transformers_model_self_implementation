@@ -1,39 +1,38 @@
 import torch
-from torch import nn
+from models import Model
 
-SEQUENCE_LENGTH = 3
+SEQUENCE_LENGTH = 8
 D_MODEL = 64
 D_ATTENTION = 32
+N_BPE = 8
 
 
-def attention(query: torch.Tensor, key: torch.Tensor, value: torch.Tensor) -> torch.Tensor:
-    k_q = torch.matmul(query, key.T)
+def train_step():
+    model.train()
+    y_prediction = model(X)
+    loss = loss_fn(y_prediction, X)
 
-    mask_positions = torch.triu_indices(*k_q.shape, offset=1)
-    attention_mask = torch.zeros_like(k_q)
-    attention_mask[mask_positions[0], mask_positions[1]] = float('-inf')
-
-    selected = torch.softmax(k_q + attention_mask, dim=1)
-    return torch.matmul(selected, value)
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
 
 
-class SelfAttention(nn.Module):
-    def __init__(self, d_model: int, d_attention: int):
-        super(SelfAttention, self).__init__()
-        self.queries = nn.Linear(d_model, d_attention)
-        self.keys = nn.Linear(d_model, d_attention)
-        self.values = nn.Linear(d_model, d_model)
-
-    def forward(self, x):
-        query = self.queries(x)
-        key = self.keys(x)
-        value = self.values(x)
-        self_attention = attention(query, key, value)
-        return x + self_attention
+def test_step():
+    model.eval()
+    output = model(X[:, :-1])
+    prediction = torch.softmax(output, dim=1)
+    prediction = torch.argmax(prediction, 1)
+    print(prediction)
 
 
 if __name__ == '__main__':
-    X = torch.randn(SEQUENCE_LENGTH, D_MODEL)
-    model = SelfAttention(D_MODEL, D_ATTENTION)
-    output = model(X)
-    print(output)
+    X = torch.Tensor([[0, 1, 2, 3, 4, 5, 6, 7]]).long()
+    model = Model(D_MODEL, D_ATTENTION, N_BPE)
+
+    learning_rate = 1e-3
+    loss_fn = torch.nn.CrossEntropyLoss(reduction='sum')
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+
+    while True:
+        # train_step()
+        test_step()
