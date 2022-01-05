@@ -9,8 +9,8 @@ N_BPE = 8
 
 def train_step():
     model.train()
-    y_prediction = model(X)
-    loss = loss_fn(y_prediction, X)
+    y_prediction = model(X[:, :-1])
+    loss = loss_fn(y_prediction, X[:, 1:].squeeze(0))
 
     optimizer.zero_grad()
     loss.backward()
@@ -34,5 +34,5 @@ if __name__ == '__main__':
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
     while True:
-        # train_step()
+        train_step()
         test_step()
