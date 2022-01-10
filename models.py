@@ -3,14 +3,11 @@ from torch import nn
 
 
 def attention(query: torch.Tensor, key: torch.Tensor, value: torch.Tensor) -> torch.Tensor:
-    k_q = torch.matmul(query, key.T)
+    k_q = torch.bmm(query, key.permute(0, 2, 1))
+    mask = torch.triu(torch.full(k_q.shape, float('-inf')), diagonal=1)
+    selected = torch.softmax(k_q + mask, dim=2)
 
-    mask_positions = torch.triu_indices(*k_q.shape, offset=1)
-    attention_mask = torch.zeros_like(k_q)
-    attention_mask[mask_positions[0], mask_positions[1]] = float('-inf')
-
-    selected = torch.softmax(k_q + attention_mask, dim=1)
-    return torch.matmul(selected, value)
+    return torch.bmm(selected, value)
 
 
 class Model(nn.Module):
@@ -20,14 +17,15 @@ class Model(nn.Module):
 
         self.layer1 = SelfAttention(d_model, d_attention)
         self.layer2 = SelfAttention(d_model, d_attention)
+        self.out = nn.Linear(d_model, vocab_size)
 
         self.embedder = nn.Embedding(vocab_size, d_model)
 
     def forward(self, x):
         x = self.embedder(x)
-        x = x.squeeze(0)
-        out = self.layer1(x)
-        out = self.layer2(out)
+        x = self.layer1(x)
+        x = self.layer2(x)
+        out = self.out(x)
         return out
 
 
