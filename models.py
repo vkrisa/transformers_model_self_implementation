@@ -13,17 +13,28 @@ def attention(query: torch.Tensor, key: torch.Tensor, value: torch.Tensor) -> to
 class Model(nn.Module):
     def __init__(self, d_model: int, d_attention: int, vocab_size: int, padding_index: int):
         super().__init__()
-        self.d_model = d_model
-
         self.embedder = nn.Embedding(vocab_size, d_model, padding_idx=padding_index)
+        self.decoder = Decoder(d_model, d_attention, vocab_size)
+
+    def forward(self, x):
+        x = self.embedder(x)
+        x = self.decoder(x)
+        return x
+
+
+class Decoder(nn.Module):
+    def __init__(self, d_model: int, d_attention: int, vocab_size: int):
+        super().__init__()
         self.layer1 = SelfAttention(d_model, d_attention)
+        self.norm = nn.LayerNorm(d_model)
         self.layer2 = SelfAttention(d_model, d_attention)
         self.out = nn.Linear(d_model, vocab_size)
 
     def forward(self, x):
-        x = self.embedder(x)
         x = self.layer1(x)
+        x = self.norm(x)
         x = self.layer2(x)
+        x = self.norm(x)
         out = self.out(x)
         return out
 
