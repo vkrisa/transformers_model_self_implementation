@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+import torch.nn.functional as F
 
 
 def attention(query: torch.Tensor, key: torch.Tensor, value: torch.Tensor) -> torch.Tensor:
@@ -26,15 +27,14 @@ class Decoder(nn.Module):
     def __init__(self, d_model: int, d_attention: int, vocab_size: int):
         super().__init__()
         self.layer1 = SelfAttention(d_model, d_attention)
-        self.norm = nn.LayerNorm(d_model)
         self.layer2 = SelfAttention(d_model, d_attention)
+        self.ff = FeedForward(d_model, 2048)
         self.out = nn.Linear(d_model, vocab_size)
 
     def forward(self, x):
         x = self.layer1(x)
-        x = self.norm(x)
         x = self.layer2(x)
-        x = self.norm(x)
+        x = self.ff(x)
         out = self.out(x)
         return out
 
@@ -45,10 +45,22 @@ class SelfAttention(nn.Module):
         self.queries = nn.Linear(d_model, d_attention)
         self.keys = nn.Linear(d_model, d_attention)
         self.values = nn.Linear(d_model, d_model)
+        self.norm = nn.LayerNorm(d_model)
 
     def forward(self, x):
         query = self.queries(x)
         key = self.keys(x)
         value = self.values(x)
         self_attention = attention(query, key, value)
-        return x + self_attention
+        return self.norm(x + self_attention)
+
+
+class FeedForward(nn.Module):
+    def __init__(self, d_model, d_ff, dropout=0.1):
+        super(FeedForward, self).__init__()
+        self.w_1 = nn.Linear(d_model, d_ff)
+        self.w_2 = nn.Linear(d_ff, d_model)
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x):
+        return self.w_2(self.dropout(F.relu(self.w_1(x))))

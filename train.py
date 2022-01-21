@@ -17,7 +17,7 @@ BOS = 1
 EOS = 2
 
 
-def prepare_data(data: [[int]]) -> torch.Tensor:
+def padding_to_longest(data: [[int]]) -> torch.Tensor:
     longest = max(len(row) for row in data)
     padded = np.zeros((len(data), longest))
 
@@ -30,7 +30,7 @@ def prepare_data(data: [[int]]) -> torch.Tensor:
 def collate(batch):
     encoded = [tokenizer.Encode(row) for row in batch]
     encoded = [[BOS] + row + [EOS] for row in encoded]
-    data = prepare_data(encoded)
+    data = padding_to_longest(encoded)
     item = data[:, :-1]
     label = data[:, 1:]
     return item, label
