@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 INPUT_PATH = "data.txt"
 D_MODEL = 64
 D_ATTENTION = 32
-N_BPE = 512
+N_BPE = 4096
 BATCH_SIZE = 20
 EPOCH_SIZE = 500
 PADDING_INDEX = 0
@@ -60,13 +60,8 @@ if __name__ == '__main__':
             loss.backward()
             optimizer.step()
 
-            # test step
-            model.eval()
-            output = model(item)
-            prediction = torch.softmax(output, dim=2)
-            prediction = torch.argmax(prediction, 2)
-        if epoch % 50 == 49:
-            result = [tokenizer.Decode(sentence.numpy().tolist()) for sentence in prediction]
-            print(result)
+    model.eval()
+    result = model.generate("Most már", tokenizer)
+    print(result)
 
 
