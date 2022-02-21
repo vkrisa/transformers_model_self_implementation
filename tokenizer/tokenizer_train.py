@@ -1,6 +1,6 @@
 import sentencepiece as spm
 
-input = '../data.txt'
+input = '../texts.txt'
 output = 'hu'
 
 spm.SentencePieceTrainer.Train('--input=' + input +

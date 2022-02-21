@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 def attention(query: torch.Tensor, key: torch.Tensor, value: torch.Tensor) -> torch.Tensor:
     k_q = torch.bmm(query, key.permute(0, 2, 1))
-    mask = torch.triu(torch.full(k_q.shape, float('-inf')), diagonal=1)
+    mask = torch.triu(torch.full(k_q.shape, float('-inf')), diagonal=1).cuda()
     selected = torch.softmax(k_q + mask, dim=2)
 
     return torch.bmm(selected, value)
@@ -13,7 +13,7 @@ def attention(query: torch.Tensor, key: torch.Tensor, value: torch.Tensor) -> to
 
 class Model(nn.Module):
     def __init__(self, d_model: int, d_attention: int, vocab_size: int, padding_index: int):
-        super().__init__()
+        super(Model, self).__init__()
         self.embedder = nn.Embedding(vocab_size, d_model, padding_idx=padding_index)
         self.decoder = Decoder(d_model, d_attention, vocab_size, 2048)
 
@@ -37,7 +37,7 @@ class Model(nn.Module):
 
 class Decoder(nn.Module):
     def __init__(self, d_model: int, d_attention: int, vocab_size: int, d_ff):
-        super().__init__()
+        super(Decoder, self).__init__()
         self.layers = nn.ModuleList([DecoderLayer(d_model, d_attention, d_ff) for _ in range(12)])
         self.out = nn.Linear(d_model, vocab_size)
 
@@ -50,7 +50,7 @@ class Decoder(nn.Module):
 
 class DecoderLayer(nn.Module):
     def __init__(self, d_model: int, d_attention: int, d_ff):
-        super().__init__()
+        super(DecoderLayer, self).__init__()
         self.layer1 = SelfAttention(d_model, d_attention)
         self.ff = FeedForward(d_model, d_ff)
 
@@ -62,7 +62,7 @@ class DecoderLayer(nn.Module):
 
 class SelfAttention(nn.Module):
     def __init__(self, d_model: int, d_attention: int):
-        super().__init__()
+        super(SelfAttention, self).__init__()
         self.queries = nn.Linear(d_model, d_attention)
         self.keys = nn.Linear(d_model, d_attention)
         self.values = nn.Linear(d_model, d_model)
